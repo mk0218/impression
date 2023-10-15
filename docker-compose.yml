@@ -1,0 +1,65 @@
+version: "3"
+
+services:
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile-dev
+    depends_on:
+      - server
+    ports:
+      - "3000:3000"
+    command: npm run dev
+    restart: always
+    tty: true
+    working_dir: /app
+    volumes:
+      - ./ui:/app
+      - /app/node_modules
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile-dev
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
+    command: python -m flask run --host=0.0.0.0
+    environment:
+      - MONGO_HOST=db
+      - MONGO_PORT=27017
+      - MONGO_USERNAME=mongo
+      - MONGO_PASSWORD=mongo
+      - MONGO_DATABASE=impression
+    restart: always
+    tty: true
+    working_dir: /app
+    volumes:
+      - ./server:/app
+
+  mongo-express:
+    image: mongo-express:1.0.0
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=db
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=mongo
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=mongo
+      - ME_CONFIG_BASICAUTH_USERNAME=mongo
+      - ME_CONFIG_BASICAUTH_PASSWORD=mongo
+    depends_on:
+      - db
+
+  db:
+    image: mongo:7.0.2
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongo
+      - MONGO_INITDB_ROOT_PASSWORD=mongo
+    volumes:
+      - ./db:/data/db
